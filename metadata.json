@@ -1,0 +1,6 @@
+{
+  "name": "Skill Builder",
+  "description": "A Claude Code & Codex SKILL.MD Builder containing skills, webhooks, and MCPs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
