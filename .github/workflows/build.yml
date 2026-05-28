@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -24,14 +26,28 @@ jobs:
           SDKMANAGER=$(find "$SDK/cmdline-tools" -name sdkmanager -type f 2>/dev/null | sort -V | tail -1)
           if [ -n "$SDKMANAGER" ]; then
             yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-            # AGP 9.1.1 requires Build Tools 36.0.0 minimum
-            "$SDKMANAGER" "platforms;android-35" "build-tools;36.0.0" 2>&1 | tail -5 || true
+            "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" 2>&1 | tail -5 || true
           fi
           printf 'org.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8\norg.gradle.parallel=false\norg.gradle.caching=false\norg.gradle.configuration-cache=false\nandroid.nonTransitiveRClass=true\nkotlin.code.style=official\nkotlin.compiler.execution.strategy=in-process\n' > gradle.properties
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build.log
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
+      - name: Post build log on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR="${{ github.event.pull_request.number }}"
+          if [ -n "$PR" ]; then
+            BODY_FILE=$(mktemp)
+            printf '### Build failure %s\n~~~\n' "$(date -u '+%H:%M UTC')" > "$BODY_FILE"
+            tail -120 /tmp/build.log 2>/dev/null >> "$BODY_FILE" || echo 'no log captured' >> "$BODY_FILE"
+            printf '\n~~~\n' >> "$BODY_FILE"
+            gh pr comment "$PR" --repo "${{ github.repository }}" --body-file "$BODY_FILE" 2>/dev/null || true
+          fi
       - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
