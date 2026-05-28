@@ -22,12 +22,12 @@ jobs:
           echo "Using pre-installed SDK"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.14.1"
+          gradle-version: "9.4.1"
       - name: Bootstrap Gradle wrapper
         run: |
           mkdir -p /tmp/gradle-bootstrap
           printf 'rootProject.name = "bootstrap"\n' > /tmp/gradle-bootstrap/settings.gradle.kts
-          gradle wrapper --gradle-version 8.14.1 --project-dir /tmp/gradle-bootstrap
+          gradle wrapper --gradle-version 9.4.1 --project-dir /tmp/gradle-bootstrap
           mkdir -p gradle/wrapper
           cp /tmp/gradle-bootstrap/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.jar
           cp /tmp/gradle-bootstrap/gradlew ./gradlew
